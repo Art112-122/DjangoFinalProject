@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Корзина</h1>
+
+    {% if games %}
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Игра</th>
+                    <th>Цена</th>
+                    <th>Кол-во</th>
+                    <th>Итого</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                <tr>
+                    <td>{{ game.name }}</td>
+                    <td>{{ game.price }} $</td>
+                    <td>{{ game.quantity }}</td>
+                    <td>{{ game.total_price }} $</td>
+                    <td>
+                        <a href="{% url 'remove_from_cart' game.id %}" class="btn btn-danger btn-sm">
+                            Удалить
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h4 class="text-end">Общая сумма: {{ total }} $</h4>
+
+    {% else %}
+        <p>Корзина пуста.</p>
+    {% endif %}
+</div>
+{% endblock %}
