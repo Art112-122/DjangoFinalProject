@@ -1,58 +1,94 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}
-  Каталог игр
-{% endblock %}
-
 {% block content %}
-  <div class="container mt-5">
-    <h1 class="mb-4 text-center">Каталог игр</h1>
+  <div class="game-header mb-5" style="position: relative; height: 350px; background: #000;">
+    {% if game.image %}
+      <img src="{{ game.image.url }}" alt="{{ game.name }}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.6;" />
+    {% endif %}
+    <div class="container" style="position: absolute; bottom: 30px; left: 0; right: 0; color: white; z-index: 2;">
+      <h1 class="display-3 fw-bold">{{ game.name }}</h1>
+      <p class="lead">{{ game.desc }}</p>
+    </div>
+  </div>
 
+  <div class="container">
     <div class="row">
-      {% for game in games %}
+      {% for service in services %}
         <div class="col-md-4 mb-4">
-          <div class="card h-100 shadow-sm">
-            {% if game.image %}
-              <img src="{{ game.image.url }}" class="card-img-top" style="height: 250px; object-fit: cover;" />
+          <div class="card h-100 shadow-sm border-0">
+            {% if service.image %}
+              <img src="{{ service.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ service.title }}" />
+            {% elif game.image %}
+              <img src="{{ game.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover; filter: grayscale(0.3);" alt="{{ service.title }}" />
             {% else %}
-              <img src="{% static 'img/no-image.png' %}" class="card-img-top" style="height: 250px; object-fit: cover;" />
+              <img src="{% static 'img/default-placeholder.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" />
             {% endif %}
 
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title">{{ game.name }}</h5>
-              <p class="card-text">{{ game.desc|truncatewords:20 }}</p>
-              <p class="text-muted">Теги: {{ game.tags }}</p>
-              <h6 class="mt-auto">{{ game.price }} $</h6>
-              <button type="button" class="btn btn-primary add-to-cart" data-url="{% url 'add_to_cart' game.id %}">Добавить</button>
+              <h5 class="card-title fw-bold">{{ service.title }}</h5>
+              <p class="card-text text-muted small">{{ service.description }}</p>
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                <span class="h4 mb-0 text-primary">{{ service.price }} $</span>
+                <button class="btn btn-success add-to-cart" data-id="{{ service.id }}">Купить</button>
+              </div>
             </div>
           </div>
         </div>
       {% empty %}
-        <p>Игры пока не добавлены.</p>
+        <div class="col-12 text-center">
+          <p class="text-muted">Для этой игры пока нет доступных услуг.</p>
+        </div>
       {% endfor %}
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
-    axios.defaults.xsrfCookieName = 'csrftoken'
-    axios.defaults.xsrfHeaderName = 'X-CSRFToken'
+    function getCookie(name) {
+      let cookieValue = null
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';')
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim()
+          if (cookie.substring(0, name.length + 1) === name + '=') {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+            break
+          }
+        }
+      }
+      return cookieValue
+    }
+    
+    const csrftoken = getCookie('csrftoken')
     
     document.querySelectorAll('.add-to-cart').forEach((button) => {
       button.addEventListener('click', function () {
-        const url = this.dataset.url
+        const serviceId = this.dataset.id
+    
+        const url = `/cart/add/${serviceId}/`
     
         axios
-          .post(url)
+          .post(
+            url,
+            {},
+            {
+              headers: { 'X-CSRFToken': csrftoken }
+            }
+          )
           .then((response) => {
             const badge = document.getElementById('cart-count')
             if (badge) {
-              badge.innerText = response.data.total_items
-              console.log('Корзина обновлена:', response.data.total_items)
+              badge.innerText = response.data.cart_count
             }
+    
+            this.innerText = 'Добавлено!'
+            this.classList.replace('btn-success', 'btn-outline-success')
+            this.disabled = true
           })
           .catch((error) => {
             console.error('Ошибка добавления:', error)
+            alert('Не удалось добавить в корзину')
           })
       })
     })

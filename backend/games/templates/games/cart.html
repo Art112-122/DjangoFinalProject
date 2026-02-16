@@ -1,43 +1,90 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Корзина{% endblock %}
+{% block title %}Ваша корзина{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1>Корзина</h1>
+    <h2 class="mb-4">Корзина услуг</h2>
 
-    {% if games %}
-        <table class="table mt-4">
-            <thead>
+    {% if services %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
                 <tr>
                     <th>Игра</th>
+                    <th>Услуга</th>
                     <th>Цена</th>
-                    <th>Кол-во</th>
-                    <th>Итого</th>
-                    <th></th>
+                    <th>Действие</th>
                 </tr>
             </thead>
             <tbody>
-                {% for game in games %}
-                <tr>
-                    <td>{{ game.name }}</td>
-                    <td>{{ game.price }} $</td>
-                    <td>{{ game.quantity }}</td>
-                    <td>{{ game.total_price }} $</td>
+                {% for service in services %}
+                <tr id="service-row-{{ service.id }}">
                     <td>
-                        <a href="{% url 'remove_from_cart' game.id %}" class="btn btn-danger btn-sm">
+                        <span class="badge bg-info text-dark">{{ service.game.name }}</span>
+                    </td>
+                    <td><strong>{{ service.title }}</strong></td>
+                    <td>{{ service.price }} $</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger remove-item" 
+                                data-id="{{ service.id }}">
                             Удалить
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
 
-        <h4 class="text-end">Общая сумма: {{ total }} $</h4>
-
+    <div class="d-flex justify-content-end mt-4">
+        <div class="text-end">
+            <h4>Итого: <span id="total-price">{{ total_price }}</span> $</h4>
+            <a href="#" class="btn btn-primary btn-lg mt-2">Оформить заказ</a>
+        </div>
+    </div>
     {% else %}
-        <p>Корзина пуста.</p>
+    <div class="text-center py-5">
+        <p class="lead">Ваша корзина пуста.</p>
+        <a href="{% url 'catalog' %}" class="btn btn-primary">Перейти к услугам</a>
+    </div>
     {% endif %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || "{{ csrf_token }}";
+
+    document.querySelectorAll('.remove-item').forEach(button => {
+        button.addEventListener('click', function() {
+            const serviceId = this.dataset.id;
+            const url = `/cart/remove/${serviceId}/`; // Убедись, что такой URL есть
+
+            axios.post(url, {}, {
+                headers: { 'X-CSRFToken': csrftoken }
+            })
+            .then(response => {
+                // Удаляем строку из таблицы
+                document.getElementById(`service-row-${serviceId}`).remove();
+                
+                // Обновляем общую цену (если бэкенд её возвращает)
+                if (response.data.total_price !== undefined) {
+                    document.getElementById('total-price').innerText = response.data.total_price;
+                }
+                
+                // Обновляем счетчик в шапке
+                const badge = document.getElementById('cart-count');
+                if (badge) badge.innerText = response.data.cart_count;
+
+                // Если товаров не осталось, перезагрузим страницу для показа "Корзина пуста"
+                if (response.data.cart_count === 0) {
+                    location.reload();
+                }
+            })
+            .catch(error => console.error('Ошибка:', error));
+        });
+    });
+</script>
 {% endblock %}

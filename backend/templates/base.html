@@ -1,12 +1,14 @@
 {% load static %}
+{% csrf_token %}
 <!DOCTYPE html>
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="{% static 'images/applogo.png' %}" />
     <title>
+      Trivex - 
       {% block title %}
-        Trivex - Онлайн магазин игр
+        Онлайн магазин игр
       {% endblock %}
     </title>
 
