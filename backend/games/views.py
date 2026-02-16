@@ -32,11 +32,9 @@ def service_catalog(request):
     game_id = request.GET.get("game")
 
     if game_id:
-        # Пытаемся найти конкретную игру
         game_obj = get_object_or_404(Game, id=game_id)
         services = Service.objects.filter(game=game_obj)
     else:
-        # Берем первую доступную игру
         game_obj = Game.objects.first()
         if game_obj:
             services = Service.objects.filter(game=game_obj)
