@@ -17,14 +17,7 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv(BASE_DIR / ".env")
-
-# Пути, где может лежать .env
-possible_env_paths = [
-    BASE_DIR / ".env",                  # рядом с DjangoFinalProject
-    BASE_DIR.parent / ".env",           # на уровень выше
-    BASE_DIR / "backend" / ".env",      # внутри backend
-]
+load_dotenv(BASE_DIR.parent / ".env")
 
 
 
@@ -47,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'games'
+    'games',
     'authentication',
 
 
@@ -120,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
-
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "/media/"
@@ -130,7 +123,7 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = "/static/"
+
 
 AUTH_USER_MODEL = "authentication.User"
 
@@ -154,3 +147,53 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+
+ADMINS_RAW = os.getenv("ADMINS", "")
+ADMINS = []
+if ADMINS_RAW:
+    for item in ADMINS_RAW.split(","):
+        if ":" in item:
+            name, email = item.split(":", 1)
+            ADMINS.append((name.strip(), email.strip()))
+        else:
+        
+            ADMINS.append(("Admin", item.strip()))
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "mail_admins": {
+            "level": "INFO",
+            "class": "authentication.mail_handler.ShortAdminEmailHandler",
+        },
+    },
+    "loggers": {
+        "user_actions": {
+            "handlers": ["mail_admins", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "authentication": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

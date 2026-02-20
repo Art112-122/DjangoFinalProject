@@ -1,7 +1,54 @@
-<h2>Login</h2>
-<form method="post">
-    {% csrf_token %}
-    <input type="email" name="email" required placeholder="Email">
-    <input type="password" name="password" required placeholder="Password">
-    <button type="submit">Login</button>
-</form>
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-5 col-lg-4">
+        <div class="card shadow border-0">
+          <div class="card-body p-5">
+            <h2 class="text-center fw-bold mb-4">Вход</h2>
+
+            <form method="post">
+              {% csrf_token %}
+
+              <div class="mb-3">
+                <label class="form-label small fw-bold">Email</label>
+                <input type="email" name="email" class="form-control" required />
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label small fw-bold">Пароль</label>
+                <div class="input-group">
+                  <input type="password" name="password" id="passwordInput" class="form-control" placeholder="••••••••" required />
+                  <button class="btn btn-outline-secondary" type="button" id="togglePassword"><span id="eyeIcon">👁️</span></button>
+                </div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Войти</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    const togglePassword = document.querySelector('#togglePassword')
+    const password = document.querySelector('#passwordInput')
+    const eyeIcon = document.querySelector('#eyeIcon')
+    
+    togglePassword.addEventListener('click', function (e) {
+      const type = password.getAttribute('type') === 'password' ? 'text' : 'password'
+      password.setAttribute('type', type)
+    
+      eyeIcon.textContent = type === 'password' ? '👁️' : '🙈'
+    })
+  </script>
+{% endblock %}
