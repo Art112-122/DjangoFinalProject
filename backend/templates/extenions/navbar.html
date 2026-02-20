@@ -1,0 +1,70 @@
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Trivex</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-link active" aria-current="page" href="#">Home</a>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="gameCatalogDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Catalog</a>
+          <ul class="dropdown-menu shadow" aria-labelledby="gameCatalogDropdown" style="width: 280px;">
+            <li class="px-3 py-2">
+              <input type="text" class="form-control form-control-sm" id="gameSearchInput" placeholder="Поиск игры..." />
+            </li>
+            <li>
+              <hr class="dropdown-divider" />
+            </li>
+
+            <div id="navGameList" style="max-height: 300px; overflow-y: auto;">
+              {% for game in nav_games %}
+                <li class="game-item">
+                  <a class="dropdown-item d-flex align-items-center" href="{% url 'catalog' %}?game={{ game.id }}">
+                    {% if game.image %}
+                      <img src="{{ game.image.url }}" alt="" style="width: 24px; height: 24px; object-fit: cover; margin-right: 10px; border-radius: 3px;" />
+                    {% endif %}
+                    <span>{{ game.name }}</span>
+                  </a>
+                </li>
+              {% empty %}
+                <li class="px-3 small text-muted">Игр пока нет</li>
+              {% endfor %}
+            </div>
+          </ul>
+        </li>
+        <a href="{% url 'cart' %}" class="btn btn-outline-dark position-relative">
+          🛒 Cart
+          <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    axios.get('/cart-count/').then((response) => {
+      document.getElementById('cart-count').innerText = response.data.total_items
+    })
+  })
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('gameSearchInput');
+    const gameItems = document.querySelectorAll('.game-item');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            
+            gameItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+
+        searchInput.addEventListener('click', (e) => e.stopPropagation());
+    }
+});
+</script>

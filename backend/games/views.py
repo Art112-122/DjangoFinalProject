@@ -1,0 +1,104 @@
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from .models import Service, Game
+
+
+def game_catalog_view(request):
+
+    game_id = request.GET.get("game")
+
+    if game_id:
+        game_obj = get_object_or_404(Game, id=game_id)
+
+        services = Service.objects.filter(game=game_obj)
+    else:
+        game_obj = Game.objects.first()
+        services = Service.objects.filter(game=game_obj)
+
+    return render(
+        request,
+        "catalog.html",
+        {
+            "game": game_obj,
+            "services": services,
+        },
+    )
+
+
+# Servises
+
+
+def service_catalog(request):
+    game_id = request.GET.get("game")
+
+    if game_id:
+        game_obj = get_object_or_404(Game, id=game_id)
+        services = Service.objects.filter(game=game_obj)
+    else:
+        game_obj = Game.objects.first()
+        if game_obj:
+            services = Service.objects.filter(game=game_obj)
+        else:
+            services = Service.objects.none()
+
+    return render(
+        request,
+        "games/catalog.html",
+        {
+            "game": game_obj,
+            "services": services,
+        },
+    )
+
+
+def add_to_cart(request, service_id):
+    if request.method == "POST":
+        get_object_or_404(Service, id=service_id)
+
+        cart = request.session.get("cart", [])
+
+        if service_id not in cart:
+            cart.append(service_id)
+            request.session["cart"] = cart
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "cart_count": len(cart),
+                "total_items": len(cart),
+            }
+        )
+    return JsonResponse({"status": "error"}, status=400)
+
+
+def cart_detail(request):
+    cart_ids = request.session.get("cart", [])
+    services = Service.objects.filter(id__in=cart_ids)
+    total_price = sum(service.price for service in services)
+    return render(
+        request, "games/cart.html", {"services": services, "total_price": total_price}
+    )
+
+
+def remove_from_cart(request, service_id):
+    if request.method == "POST":
+        cart = request.session.get("cart", [])
+        if service_id in cart:
+            cart.remove(service_id)
+            request.session["cart"] = cart
+
+        services = Service.objects.filter(id__in=cart)
+        total_price = sum(service.price for service in services)
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "cart_count": len(cart),
+                "total_price": float(total_price),
+            }
+        )
+
+
+def get_cart_count(request):
+    cart = request.session.get("cart", [])
+    return JsonResponse({"total_items": len(cart)})
