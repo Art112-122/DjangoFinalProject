@@ -1,5 +1,8 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from .forms import ServiceForm
 from .models import Service, Game
 
 
@@ -48,6 +51,52 @@ def service_catalog(request):
             "game": game_obj,
             "services": services,
         },
+    )
+
+
+@login_required
+def service_delete(request, pk):
+    service = get_object_or_404(Service, pk=pk, author=request.user)
+
+    if request.method == "POST":
+        service.delete()
+        messages.success(request, "Объявление удалено.")
+
+    return redirect("profile")
+
+
+@login_required
+def service_create(request):
+    if request.method == "POST":
+        # Передаем и POST данные, и FILES (картинку)
+        form = ServiceForm(request.POST, request.FILES)
+        if form.is_valid():
+            service = form.save(commit=False)
+            service.author = request.user
+            service.save()
+            return redirect("profile")
+    else:
+        form = ServiceForm()
+    return render(
+        request, "games/service_form.html", {"form": form, "title": "Создать услугу"}
+    )
+
+
+@login_required
+def service_edit(request, pk):
+    service = get_object_or_404(Service, pk=pk, author=request.user)
+    if request.method == "POST":
+        # Также не забываем про request.FILES здесь
+        form = ServiceForm(request.POST, request.FILES, instance=service)
+        if form.is_valid():
+            form.save()
+            return redirect("profile")
+    else:
+        form = ServiceForm(instance=service)
+    return render(
+        request,
+        "games/service_form.html",
+        {"form": form, "title": "Редактировать услугу"},
     )
 
 
@@ -102,3 +151,6 @@ def remove_from_cart(request, service_id):
 def get_cart_count(request):
     cart = request.session.get("cart", [])
     return JsonResponse({"total_items": len(cart)})
+
+
+

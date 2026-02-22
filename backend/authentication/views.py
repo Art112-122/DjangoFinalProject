@@ -13,7 +13,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.core.cache import cache
 from .models import User
-from games.models import Cart, CartItem, Game
+from games.models import Cart, CartItem, Game, Service
 from .services.verification_service import create_verification, verify_code
 from .services.email_service import send_verification_email
 from .forms import CustomUserCreationForm
@@ -34,25 +34,20 @@ def merge_cart_from_cookies(request, user):
         return
 
     try:
-        # Предполагаем, что в куках данные в формате {"ID_ИГРЫ": КОЛИЧЕСТВО}
         cookie_data = json.loads(cart_cookie)
     except (json.JSONDecodeError, TypeError):
         return
 
-    # Получаем или создаем корзину в базе для этого юзера
     user_cart, _ = Cart.objects.get_or_create(user=user)
 
     for game_id, quantity in cookie_data.items():
         try:
             game = Game.objects.get(id=game_id)
-            # Ищем, есть ли такая игра уже в корзине в базе
             item, created = CartItem.objects.get_or_create(cart=user_cart, game=game)
 
             if not created:
-                # Если уже была — прибавляем количество из куки
                 item.quantity += int(quantity)
             else:
-                # Если не было — ставим количество из куки
                 item.quantity = int(quantity)
             item.save()
         except (Game.DoesNotExist, ValueError):
@@ -134,10 +129,8 @@ def verify_email_view(request):
             user.save()
             login(request, user)
 
-            # ЛОГ В КОНСОЛЬ
             logger.info(f"Пользователь подтвердил email: {user.email}")
 
-            # ЛОГ НА ПОЧТУ
             user_action_logger.info(
                 f"✅ ПОДТВЕРЖДЕНИЕ: Пользователь {user.email} подтвердил email"
             )
@@ -145,10 +138,7 @@ def verify_email_view(request):
             messages.success(request, "Email подтверждён! Добро пожаловать.")
             return redirect("catalog")
         else:
-            # ЛОГ В КОНСОЛЬ (предупреждение)
             logger.warning(f"Неудачная попытка подтверждения email для {user.email}")
-
-            # НЕ отправляем на почту неудачные попытки (чтобы не спамить)
 
             messages.error(request, "Неверный или просроченный код.")
 
@@ -215,17 +205,16 @@ def profile_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
+    my_services = Service.objects.filter(author=request.user).select_related("game")
+
     if request.method == "POST":
         new_username = request.POST.get("username")
-
         if new_username:
             request.user.username = new_username
-
         if "avatar" in request.FILES:
             request.user.avatar = request.FILES["avatar"]
-
         request.user.save()
-        messages.success(request, "Профиль успешно обновлен!")
+        messages.success(request, "Профиль обновлен")
         return redirect("profile")
 
-    return render(request, "authentication/profile.html")
+    return render(request, "authentication/profile.html", {"my_services": my_services})
