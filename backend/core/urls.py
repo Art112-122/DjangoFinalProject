@@ -23,7 +23,7 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("games.urls")),
-    path('auth/', include('django.contrib.auth.urls')),
+    path("auth/", include("authentication.urls")),
 ]
 
 if settings.DEBUG:
