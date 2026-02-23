@@ -18,10 +18,8 @@ from .services.verification_service import create_verification, verify_code
 from .services.email_service import send_verification_email
 from .forms import CustomUserCreationForm
 
-# Основной логгер для консоли и файла
 logger = logging.getLogger(__name__)
 
-# ОТДЕЛЬНЫЙ логгер только для отправки на почту админам
 user_action_logger = logging.getLogger("user_actions")
 
 LOGIN_ATTEMPTS_LIMIT = 5

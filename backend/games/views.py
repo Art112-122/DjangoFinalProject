@@ -6,6 +6,19 @@ from .forms import ServiceForm
 from .models import Service, Game
 
 
+def index(request):
+    games = Game.objects.all()
+    latest_services = Service.objects.select_related("game", "author").order_by("-id")[
+        :6
+    ]
+
+    return render(
+        request,
+        "games/index.html",
+        {"games": games, "latest_services": latest_services},
+    )
+
+
 def game_catalog_view(request):
 
     game_id = request.GET.get("game")
@@ -33,16 +46,18 @@ def game_catalog_view(request):
 
 def service_catalog(request):
     game_id = request.GET.get("game")
+    search_query = request.GET.get("search")  # Получаем текст поиска
+
+    services = Service.objects.all()
 
     if game_id:
         game_obj = get_object_or_404(Game, id=game_id)
-        services = Service.objects.filter(game=game_obj)
+        services = services.filter(game=game_obj)
     else:
-        game_obj = Game.objects.first()
-        if game_obj:
-            services = Service.objects.filter(game=game_obj)
-        else:
-            services = Service.objects.none()
+        game_obj = None
+
+    if search_query:
+        services = services.filter(title__icontains=search_query)
 
     return render(
         request,
@@ -50,9 +65,15 @@ def service_catalog(request):
         {
             "game": game_obj,
             "services": services,
+            "search_query": search_query,  # Возвращаем строку поиска в шаблон
         },
     )
 
+
+def service_detail(request, pk):
+    service = get_object_or_404(Service.objects.select_related("author", "game"), pk=pk)
+
+    return render(request, "games/service_detail.html", {"service": service})
 
 @login_required
 def service_delete(request, pk):

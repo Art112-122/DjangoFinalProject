@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load text_filters %}
+
+{% block content %}
+  <div class="bg-dark text-white py-5 mb-5" style="background: linear-gradient(45deg, #1a1a1a 0%, #343a40 100%);">
+    <div class="container py-5">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1 class="display-3 fw-bold mb-3">Trivex - Твой быстрый старт в любимых играх</h1>
+          <p class="lead mb-4 opacity-75">Покупай услуги, аккаунты и буст у проверенных игроков. Безопасно, быстро и выгодно.</p>
+          <div class="d-flex gap-3">
+            <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg px-4 rounded-pill">В каталог</a>
+            <a href="#games" class="btn btn-outline-light btn-lg px-4 rounded-pill">Выбрать игру</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <section id="games" class="mb-5">
+      <div class="d-flex justify-content-between align-items-end mb-4">
+        <h2 class="fw-bold mb-0">Популярные игры</h2>
+      </div>
+      <div class="row g-3">
+        {% for g in games %}
+          <div class="col-6 col-md-4 col-lg-2">
+            <a href="{% url 'catalog' %}?game={{ g.id }}" class="text-decoration-none text-dark">
+              <div class="card h-100 border-0 shadow-sm hover-up text-center p-3 rounded-4">
+                {% if g.image %}
+                  <img src="{{ g.image.url }}" class="mx-auto mb-2 rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                {% endif %}
+                <h6 class="fw-bold mb-0">{{ g.name }}</h6>
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+          <h2 class="fw-bold mb-0">Свежие предложения</h2>
+          <p class="text-muted mb-0">Успей купить по выгодной цене</p>
+        </div>
+      </div>
+
+      <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for service in latest_services %}
+          <div class="col">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden position-relative">
+              {% if service.image %}
+                <img src="{{ service.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ service.title }}" />
+              {% elif service.game.image %}
+                <img src="{{ service.game.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover; filter: grayscale(0.3);" alt="{{ service.title }}" />
+              {% else %}
+                <img src="{% static 'img/default-placeholder.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" />
+              {% endif %}
+              <div class="card-body d-flex flex-column">
+                <a href="{% url 'service_detail' service.id %}" class="stretched-link"></a>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <span class="badge bg-light text-primary border">{{ service.game.name }}</span>
+                  <h5 class="fw-bold text-primary mb-0">{{ service.price }} $</h5>
+                </div>
+                <h6 class="card-title fw-bold">{{ service.title }}</h6>
+                <p class="card-text text-muted small">{{ service.description|smart_truncate }}</p>
+
+                <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center" style="z-index: 2; position: relative;">
+                    <img src="{{ service.author.avatar.url }}" class="rounded-circle me-2" width="24" height="24" />
+                    <span class="small text-muted">{{ service.author.username }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <style>
+    .hover-up {
+      transition: transform 0.2s ease;
+    }
+    .hover-up:hover {
+      transform: translateY(-5px);
+      background-color: #f8f9fa;
+    }
+    .bg-primary {
+      background-color: #0d6efd !important;
+    }
+  </style>
+{% endblock %}
