@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}403 - Fobbiden{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <h1 class="display-1 fw-bold text-danger">403</h1>
+    <h2 class="mb-4">Стоп! Сюда нельзя.</h2>
+    <p class="text-muted mb-5">У вас нет прав на просмотр этой страницы.</p>
+    <a href="{% url 'index' %}" class="btn btn-outline-dark rounded-pill px-5">На главную</a>
+</div>
+{% endblock %}

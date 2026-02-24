@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -5,6 +7,7 @@ from django.http import JsonResponse
 from .forms import ServiceForm
 from .models import Service, Game
 
+user_action_logger = logging.getLogger("user_actions")
 
 def index(request):
     games = Game.objects.all()
@@ -81,6 +84,7 @@ def service_delete(request, pk):
 
     if request.method == "POST":
         service.delete()
+        user_action_logger.info(f"✅DELETE: Обьявление удалено: {service.title}")
         messages.success(request, "Объявление удалено.")
 
     return redirect("profile")
@@ -89,13 +93,16 @@ def service_delete(request, pk):
 @login_required
 def service_create(request):
     if request.method == "POST":
-        # Передаем и POST данные, и FILES (картинку)
         form = ServiceForm(request.POST, request.FILES)
         if form.is_valid():
             service = form.save(commit=False)
             service.author = request.user
             service.save()
+            user_action_logger.info(
+                f"✅CREATE: Обьявление {service.title} создано автором {request.user}"
+            )
             return redirect("profile")
+            
     else:
         form = ServiceForm()
     return render(
@@ -107,10 +114,12 @@ def service_create(request):
 def service_edit(request, pk):
     service = get_object_or_404(Service, pk=pk, author=request.user)
     if request.method == "POST":
-        # Также не забываем про request.FILES здесь
         form = ServiceForm(request.POST, request.FILES, instance=service)
         if form.is_valid():
             form.save()
+            user_action_logger.info(
+                f"♻️UPDATE: Обьявление {service.title} обновлено автором {request.user}"
+            )
             return redirect("profile")
     else:
         form = ServiceForm(instance=service)

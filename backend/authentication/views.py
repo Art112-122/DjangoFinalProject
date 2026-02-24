@@ -18,8 +18,6 @@ from .services.verification_service import create_verification, verify_code
 from .services.email_service import send_verification_email
 from .forms import CustomUserCreationForm
 
-logger = logging.getLogger(__name__)
-
 user_action_logger = logging.getLogger("user_actions")
 
 LOGIN_ATTEMPTS_LIMIT = 5
@@ -72,8 +70,8 @@ def home(request):
 def register_view(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
-        
         if form.is_valid():
+
             user = form.save(commit=False)
             
             user.is_active = False
@@ -88,7 +86,6 @@ def register_view(request):
             request.session["verification_user_id"] = user.id
 
 
-            logger.info(f"Новый пользователь зарегистрировался: {user.email}")
             user_action_logger.info(
                 f"✅ РЕГИСТРАЦИЯ: Пользователь {user.email} (ник: {user.username}) зарегистрировался"
             )
@@ -102,9 +99,13 @@ def register_view(request):
             for error_list in form.errors.values():
                 for error in error_list:
                     messages.error(request, error)
+            
+            user_action_logger.warning(
+                f"❗ РЕГИСТРАЦИЯ: Пользователь {user.email} получил предупреждение по этим пунктам {error_list}"
+            )
     else:
         form = CustomUserCreationForm()
-
+    
     return render(request, "authentication/register.html", {"form": form})
 
 
@@ -127,7 +128,6 @@ def verify_email_view(request):
             user.save()
             login(request, user)
 
-            logger.info(f"Пользователь подтвердил email: {user.email}")
 
             user_action_logger.info(
                 f"✅ ПОДТВЕРЖДЕНИЕ: Пользователь {user.email} подтвердил email"
@@ -136,7 +136,7 @@ def verify_email_view(request):
             messages.success(request, "Email подтверждён! Добро пожаловать.")
             return redirect("catalog")
         else:
-            logger.warning(f"Неудачная попытка подтверждения email для {user.email}")
+            user_action_logger.warning(f"Неудачная попытка подтверждения email для {user.email}")
 
             messages.error(request, "Неверный или просроченный код.")
 
@@ -161,18 +161,17 @@ def login_view(request):
                 login(request, user)
                 request.session.set_expiry(60 * 60 * 24 * 7)
 
-                # Создаем ответ
+                
                 response = redirect("catalog")
 
-                # МЕРДЖ КОРЗИНЫ
+                
                 merge_cart_from_cookies(request, user)
                 response.delete_cookie("cart")
 
-                logger.info(f"Пользователь вошел: {email}")
                 user_action_logger.info(f"✅ ВХОД: {email}")
 
                 messages.success(request, "Вы успешно вошли.")
-                return response  # Обязательный возврат объекта response
+                return response  
             else:
                 messages.error(request, "Email не подтверждён.")
                 return redirect("login")
@@ -188,10 +187,6 @@ def logout_view(request):
     if request.user.is_authenticated:
         user_email = request.user.email
 
-        # ЛОГ В КОНСОЛЬ
-        logger.info(f"Пользователь вышел из системы: {user_email}")
-
-        # ЛОГ НА ПОЧТУ
         user_action_logger.info(f"✅ ВЫХОД: Пользователь {user_email} вышел из системы")
 
     logout(request)
@@ -209,8 +204,14 @@ def profile_view(request):
         new_username = request.POST.get("username")
         if new_username:
             request.user.username = new_username
+            user_action_logger.info(
+                f"♻️UPDATE: Пользователь {new_username} обновил имя пользывателя"
+            )
         if "avatar" in request.FILES:
             request.user.avatar = request.FILES["avatar"]
+            user_action_logger.info(
+                f"♻️UPDATE: Пользователь {new_username} обновил аватар"
+            )
         request.user.save()
         messages.success(request, "Профиль обновлен")
         return redirect("profile")

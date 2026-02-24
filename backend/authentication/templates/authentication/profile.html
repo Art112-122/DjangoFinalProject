@@ -50,7 +50,7 @@
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between">
                                         <span class="badge bg-light text-primary border mb-1">{{ s.game.name }}</span>
-                                        <h5 class="fw-bold text-dark m-0">{{ s.price }} ₽</h5>
+                                        <h5 class="fw-bold text-dark m-0">{{ s.price }} $</h5>
                                     </div>
                                     <h6 class="mb-1 fw-semibold">{{ s.title }}</h6>
                                     <p class="text-muted small mb-0 text-truncate" style="max-width: 350px;">{{ s.description|smart_truncate }}</p>
@@ -74,7 +74,6 @@
                 </div>
                 {% empty %}
                 <div class="text-center py-5">
-                    <img src="{% static 'images/empty_box.png' %}" width="100" class="mb-3 opacity-50">
                     <p class="text-muted">У вас пока нет активных объявлений.</p>
                 </div>
                 {% endfor %}
