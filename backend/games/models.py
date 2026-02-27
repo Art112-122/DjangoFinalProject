@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.conf import settings
 
@@ -24,6 +25,11 @@ class Service(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to="services/", blank=True, null=True)
+
+    def get_average_rating(self):
+        from django.db.models import Avg
+
+        return self.reviews.aggregate(Avg("rating"))["rating__avg"] or 0
 
     def __str__(self):
         return f"{self.title} ({self.game.name})"
@@ -62,3 +68,26 @@ class CartItem(models.Model):
     @property
     def total_price(self):
         return self.game.price * self.quantity
+    
+
+class Review(models.Model):
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="reviews"
+    )
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    text = models.TextField("Текст отзыва")
+    rating = models.PositiveSmallIntegerField(
+        "Оценка",
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="От 1 до 5",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["service", "author"], name="unique_review")
+        ]
+
+    def __str__(self):
+        return f"Отзыв от {self.author} на {self.service}"

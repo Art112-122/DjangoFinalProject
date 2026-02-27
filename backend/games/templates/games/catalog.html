@@ -54,15 +54,38 @@
               <img src="{% static 'img/default-placeholder.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" />
             {% endif %}
 
-            <div class="card-body d-flex flex-column">
+            <div class="card-body d-flex flex-column position-relative">
               <a href="{% url 'service_detail' service.id %}" class="stretched-link"></a>
-              <h5 class="card-title fw-bold">{{ service.title }}</h5>
-              <p class="card-text text-muted small">{{ service.description|smart_truncate }}</p>
-              <div class="mt-auto d-flex justify-content-between align-items-center">
-                <span class="h4 mb-0 text-primary">{{ service.price }} $</span>
-                <button style="z-index: 2;" class="btn btn-success add-to-cart" data-id="{{ service.id }}">В корзину</button>
+
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h5 class="card-title fw-bold mb-0">{{ service.title }}</h5>
+                  <div class="text-warning small" style="white-space: nowrap;">
+                      {% with avg=service.get_average_rating %}
+                          {% if avg > 0 %}
+                              ★ <span class="text-dark fw-bold">{{ avg|stringformat:".1f" }}</span>
+                          {% else %}
+                              <span class="text-muted small" style="font-size: 10px;">нет отзывов</span>
+                          {% endif %}
+                      {% endwith %}
+                  </div>
               </div>
-            </div>
+
+              <p class="card-text text-muted small mb-3">{{ service.description|smart_truncate }}</p>
+
+              <div class="mb-3 position-relative" style="z-index: 2;">
+                  <a href="{% url 'seller_profile' service.author.email %}" class="text-decoration-none d-flex align-items-center">
+                      <img src="{{ service.author.avatar.url }}" class="rounded-circle me-2" width="24" height="24" style="object-fit: cover;">
+                      <span class="text-muted small hover-primary">{{ service.author.username }}</span>
+                  </a>
+              </div>
+
+              <div class="mt-auto d-flex justify-content-between align-items-center">
+                  <span class="h4 mb-0 text-primary fw-bold">{{ service.price }} $</span>
+                  <button style="z-index: 2;" class="btn btn-success btn-sm rounded-pill px-3 add-to-cart" data-id="{{ service.id }}">
+                      <i class="bi bi-cart-plus me-1"></i>В корзину
+                  </button>
+              </div>
+          </div>
           </div>
         </div>
       {% empty %}
@@ -72,6 +95,16 @@
       {% endfor %}
     </div>
   </div>
+
+  <style>
+    .hover-primary:hover { color: #0d6efd !important; text-decoration: underline; }
+    .card-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+  </style>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>

@@ -1,11 +1,13 @@
 import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Avg
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from .forms import ServiceForm
-from .models import Service, Game
+from .forms import ServiceForm, ReviewForm
+from .models import Service, Game, Review
+from authentication.models import User
 
 user_action_logger = logging.getLogger("user_actions")
 
@@ -75,8 +77,21 @@ def service_catalog(request):
 
 def service_detail(request, pk):
     service = get_object_or_404(Service.objects.select_related("author", "game"), pk=pk)
-
-    return render(request, "games/service_detail.html", {"service": service})
+    avg_rating = service.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    
+    full_stars = int(avg_rating)
+    
+    user_already_reviewed = False
+    if request.user.is_authenticated:
+        user_already_reviewed = Review.objects.filter(service=service, author=request.user).exists()
+    
+    return render(request, 'games/service_detail.html', {
+        'service': service,
+        'avg_rating': round(avg_rating, 1),
+        'full_stars': range(full_stars),
+        'empty_stars': range(5 - full_stars),
+        'user_already_reviewed': user_already_reviewed
+    })
 
 @login_required
 def service_delete(request, pk):
@@ -128,6 +143,18 @@ def service_edit(request, pk):
         "games/service_form.html",
         {"form": form, "title": "Редактировать услугу"},
     )
+
+
+def add_review(request, service_id):
+    service = Service.objects.get(id=service_id)
+    if request.method == "POST" and request.user.is_authenticated:
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.service = service
+            review.author = request.user
+            review.save()
+    return redirect("service_detail", pk=service_id)
 
 
 def add_to_cart(request, service_id):
@@ -183,4 +210,15 @@ def get_cart_count(request):
     return JsonResponse({"total_items": len(cart)})
 
 
+def seller_profile(request, email):
+    seller = get_object_or_404(User, email=email)
+    services = Service.objects.filter(author=seller)
 
+    return render(
+        request,
+        "games/seller_profile.html",
+        {
+            "seller": seller,
+            "services": services,
+        },
+    )

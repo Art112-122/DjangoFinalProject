@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load text_filters %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-sticky" style="top: 20px;">
+                <div class="card-body p-4 text-center">
+                    <div class="position-relative d-inline-block mb-3">
+                        <img src="{{ seller.avatar.url }}" 
+                             class="rounded-circle border border-4 border-white shadow-sm" 
+                             width="140" height="140" style="object-fit: cover;">
+                        <span class="position-absolute bottom-0 end-0 bg-success border border-3 border-white rounded-circle" 
+                              style="width: 25px; height: 25px;" title="В сети"></span>
+                    </div>
+                    
+                    <h4 class="fw-bold mb-1">{{ seller.username }}</h4>
+                    <p class="text-muted small mb-3">На сайте с {{ seller.date_joined|date:"Y" }} года</p>
+
+                    <div class="bg-light rounded-4 p-3 mb-4">
+                        <div class="row g-0">
+                            <div class="col-6 border-end">
+                                <div class="fw-bold text-warning h5 mb-0">
+                                    {{ seller.get_seller_rating }} ★
+                                </div>
+                                <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Рейтинг</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fw-bold h5 mb-0 text-dark">
+                                    {{ services.count }}
+                                </div>
+                                <div class="text-muted" style="font-size: 10px; text-transform: uppercase;">Услуг</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm">
+                        <i class="bi bi-chat-dots me-2"></i>Написать продавцу
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0">Объявления продавца</h3>
+            </div>
+
+            <div class="row row-cols-1 g-3">
+                {% for s in services %}
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-4 hover-shadow transition overflow-hidden">
+                        <div class="card-body p-0">
+                            <a href="{% url 'service_detail' s.id %}" class="text-decoration-none d-flex align-items-center">
+                                <div class="flex-shrink-0" style="width: 150px; height: 110px;">
+                                    {% if s.image %}
+                                        <img src="{{ s.image.url }}" class="h-100 w-100" style="object-fit: cover;">
+                                    {% elif s.game.image %}
+                                        <img src="{{ s.game.image.url }}" class="h-100 w-100" style="object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light h-100 w-100 d-flex align-items-center justify-content-center text-muted">
+                                            <i class="bi bi-image"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-grow-1 p-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="badge bg-primary-soft text-primary mb-1" style="font-size: 10px;">{{ s.game.name }}</span>
+                                            <h6 class="mb-1 fw-bold text-dark">{{ s.title }}</h6>
+                                        </div>
+                                        <h5 class="fw-bold text-primary m-0">{{ s.price }} $</h5>
+                                    </div>
+                                    <p class="text-muted small mb-0 text-truncate" style="max-width: 400px;">
+                                        {{ s.description|smart_truncate }}
+                                    </p>
+                                </div>
+
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                    <div class="text-muted mb-3">
+                        <i class="bi bi-card-list" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                    <h5 class="text-muted">У этого продавца пока нет активных объявлений.</h5>
+                    <a href="{% url 'catalog' %}" class="btn btn-link">Вернуться в каталог</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.08); }
+    .hover-shadow:hover { 
+        box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.08)!important; 
+        transform: translateY(-2px);
+    }
+    .transition { transition: all 0.3s ease; }
+    body { background-color: #f8f9fa; }
+    .position-sticky { z-index: 100; }
+</style>
+{% endblock %}

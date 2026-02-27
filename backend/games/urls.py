@@ -9,7 +9,9 @@ from .views import (
     service_delete,
     service_edit,
     service_detail,
-    index
+    index,
+    add_review,
+    seller_profile
 )
 
 urlpatterns = [
@@ -23,4 +25,6 @@ urlpatterns = [
     path("service/add/", service_create, name="service_create"),
     path("service/<int:pk>/edit/", service_edit, name="service_edit"),
     path("service/<int:pk>/delete/", service_delete, name="service_delete"),
+    path("service/<int:service_id>/review/", add_review, name="add_review"),
+    path("seller/<str:email>/", seller_profile, name="seller_profile"),
 ]
