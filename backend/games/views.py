@@ -2,6 +2,7 @@ import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Avg
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -52,9 +53,10 @@ def game_catalog_view(request):
 
 def service_catalog(request):
     game_id = request.GET.get("game")
-    search_query = request.GET.get("search")  # Получаем текст поиска
+    search_query = request.GET.get("search")
+    page_number = request.GET.get("page", 1)
 
-    services = Service.objects.all()
+    services = Service.objects.all().order_by("-id")
 
     if game_id:
         game_obj = get_object_or_404(Game, id=game_id)
@@ -65,13 +67,19 @@ def service_catalog(request):
     if search_query:
         services = services.filter(title__icontains=search_query)
 
+    paginator = Paginator(services, 12)
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "games/_service_items.html", {"services": page_obj})
+
     return render(
         request,
         "games/catalog.html",
         {
             "game": game_obj,
-            "services": services,
-            "search_query": search_query,  # Возвращаем строку поиска в шаблон
+            "services": page_obj,
+            "search_query": search_query,
         },
     )
 
