@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат з {{ other_user.username }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background-color: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background-color: #9e9e9e;
+        }
+
+        .status-dot.connecting {
+            background-color: #ff9800;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .connection-status {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .connection-dot.connected {
+            background-color: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-dot.disconnected {
+            background-color: #f44336;
+        }
+
+        .connection-dot.connecting {
+            background-color: #ff9800;
+            animation: pulse 1s infinite;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-wrapper {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-wrapper.own {
+            align-items: flex-end;
+        }
+
+        .message-sender {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 3px;
+            margin-left: 10px;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .own .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .other .message-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message-time {
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .own .message-time {
+            text-align: right;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #message-input:focus {
+            border-color: #667eea;
+        }
+
+        #send-button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .debug-panel {
+            background: #1e1e2f;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 10px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+
+        .load-more {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .load-more-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .load-more-btn:hover {
+            background: #764ba2;
+        }
+
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="user-info">
+                <div class="user-name">{{ other_user.username }}</div>
+                <div class="status-container">
+                    <span class="status-dot offline" id="status-dot"></span>
+                    <span id="status-text">офлайн</span>
+                </div>
+            </div>
+            <div class="connection-status" id="connection-status">
+                <span class="connection-dot disconnected" id="connection-dot"></span>
+                <span id="connection-text">Підключення...</span>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messages-container">
+            {% if page_obj.has_previous %}
+                <div class="load-more">
+                    <button class="load-more-btn" onclick="loadMoreMessages()" id="load-more-btn">
+                        Завантажити попередні повідомлення
+                    </button>
+                </div>
+            {% endif %}
+
+            {% for message in messages reversed %}
+                <div class="message-wrapper {% if message.sender.id == user_id %}own{% else %}other{% endif %}" data-message-id="{{ message.id }}">
+                    {% if message.sender.id != user_id %}
+                        <div class="message-sender">{{ message.sender.username }}</div>
+                    {% endif %}
+                    <div class="message-bubble">
+                        {{ message.text }}
+                        <div class="message-time">{{ message.created_at|date:"H:i" }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Введіть повідомлення..." maxlength="5000">
+            <button id="send-button" onclick="sendMessage()">Надіслати</button>
+        </div>
+
+        <div class="debug-panel" id="debug-panel">
+            Завантаження...
+        </div>
+    </div>
+
+    <script>
+        // Дані з Django
+        const roomId = "{{ room.id }}";
+        const userId = {{ user_id }};
+        const username = "{{ request.user.username }}";
+        const otherUserId = {{ other_user.id }};
+        const otherUsername = "{{ other_user.username }}";
+
+        // DOM елементи
+        const messagesContainer = document.getElementById('messages-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const connectionDot = document.getElementById('connection-dot');
+        const connectionText = document.getElementById('connection-text');
+        const debugPanel = document.getElementById('debug-panel');
+
+        // Змінні стану
+        let socket = null;
+        let reconnectAttempts = 0;
+        let isConnected = false;
+        let messageQueue = [];
+        let pingInterval = null;
+        let currentPage = {{ page_obj.number }};
+
+        // Функція оновлення debug інформації
+        function updateDebug() {
+            let connectionColor = '🔴';
+            let connectionStatus = 'ВІДКЛЮЧЕНО';
+
+            if (isConnected) {
+                connectionColor = '🟢';
+                connectionStatus = 'ПІДКЛЮЧЕНО';
+            }
+
+            debugPanel.innerHTML = `
+                Ви: ${username} (ID: ${userId})<br>
+                Співрозмовник: ${otherUsername} (ID: ${otherUserId})<br>
+                WebSocket: ${connectionColor} ${connectionStatus}<br>
+                Статус співрозмовника: ${statusText.innerText}<br>
+                Черга повідомлень: ${messageQueue.length}
+            `;
+        }
+
+        // Функція оновлення статусу підключення
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+
+            if (connected) {
+                connectionDot.className = 'connection-dot connected';
+                connectionText.textContent = 'Підключено';
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+                console.log('✅ Статус оновлено: ПІДКЛЮЧЕНО');
+            } else {
+                connectionDot.className = 'connection-dot disconnected';
+                connectionText.textContent = 'Відключено';
+                sendButton.disabled = true;
+                messageInput.disabled = true;
+                console.log('❌ Статус оновлено: ВІДКЛЮЧЕНО');
+            }
+
+            updateDebug();
+        }
+
+        // Функція підключення WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/chat/${roomId}/`;
+
+            console.log(`🔄 Підключення до WebSocket: ${wsUrl}`);
+            connectionDot.className = 'connection-dot connecting';
+            connectionText.textContent = 'Підключення...';
+
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function() {
+                console.log('✅ WebSocket ПІДКЛЮЧЕНО!');
+                reconnectAttempts = 0;
+                updateConnectionStatus(true);
+
+                // Відправляємо накопичені повідомлення
+                while (messageQueue.length > 0) {
+                    const msg = messageQueue.shift();
+                    socket.send(JSON.stringify(msg));
+                }
+
+                // Запускаємо ping для перевірки з'єднання
+                if (pingInterval) clearInterval(pingInterval);
+                pingInterval = setInterval(() => {
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({type: 'ping'}));
+                    }
+                }, 30000);
+            };
+
+            socket.onclose = function(event) {
+                console.log(`❌ WebSocket ВІДКЛЮЧЕНО. Код: ${event.code}, Причина: ${event.reason}`);
+                updateConnectionStatus(false);
+
+                if (pingInterval) clearInterval(pingInterval);
+
+                // Пробуємо перепідключитися
+                if (reconnectAttempts < 5) {
+                    reconnectAttempts++;
+                    setTimeout(connectWebSocket, 3000);
+                }
+            };
+
+            socket.onerror = function(error) {
+                console.error('❌ WebSocket ПОМИЛКА:', error);
+                updateConnectionStatus(false);
+            };
+
+            socket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('📨 ОТРИМАНО:', data);
+
+                    if (data.type === 'new_message') {
+                        // Нове повідомлення
+                        addMessageToChat(data);
+                    }
+                    else if (data.type === 'status_update') {
+                        // Оновлення статусу користувача
+                        if (data.user_id === otherUserId) {
+                            updateUserStatus(data.status);
+                        }
+                    }
+                    else if (data.type === 'pong') {
+                        // Відповідь на ping - з'єднання живе
+                        console.log('🏓 PONG');
+                    }
+                    else if (data.type === 'error') {
+                        console.error('Помилка від сервера:', data.error);
+                        showError(data.error);
+                    }
+
+                    updateDebug();
+                } catch (e) {
+                    console.error('Помилка парсингу повідомлення:', e);
+                }
+            };
+        }
+
+        // Функція додавання повідомлення в чат
+        function addMessageToChat(data) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-wrapper ${data.user_id === userId ? 'own' : 'other'}`;
+
+            let messageHTML = '';
+            if (data.user_id !== userId) {
+                messageHTML += `<div class="message-sender">${data.user}</div>`;
+            }
+
+            const time = data.created_at
+                ? new Date(data.created_at).toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'})
+                : new Date().toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'});
+
+            messageHTML += `
+                <div class="message-bubble">
+                    ${data.message}
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+
+            messageDiv.innerHTML = messageHTML;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Функція оновлення статусу користувача
+        function updateUserStatus(status) {
+            if (status === 'online') {
+                statusDot.className = 'status-dot online';
+                statusText.textContent = 'онлайн';
+            } else if (status === 'offline') {
+                statusDot.className = 'status-dot offline';
+                statusText.textContent = 'офлайн';
+            } else {
+                statusDot.className = 'status-dot connecting';
+                statusText.textContent = 'підключення...';
+            }
+            updateDebug();
+        }
+
+        // Функція відправки повідомлення
+        function sendMessage() {
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                alert('Введіть повідомлення');
+                return;
+            }
+
+            if (message.length > 5000) {
+                alert('Повідомлення занадто довге (макс. 5000 символів)');
+                return;
+            }
+
+            const messageData = {
+                type: 'message',
+                message: message,
+                user_id: userId
+            };
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(messageData));
+                messageInput.value = '';
+            } else {
+                messageQueue.push(messageData);
+                showError('Немає підключення до сервера. Повідомлення додано в чергу.');
+                messageInput.value = '';
+            }
+
+            updateDebug();
+        }
+
+        // Функція показу помилки
+        function showError(text) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = text;
+            messagesContainer.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+        }
+
+        // Функція завантаження старих повідомлень
+        function loadMoreMessages() {
+            const btn = document.getElementById('load-more-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Завантаження...';
+
+                fetch(`/chat/api/room/${roomId}/messages/?page=${currentPage + 1}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.messages && data.messages.length > 0) {
+                            // Зберігаємо поточну висоту прокрутки
+                            const scrollHeight = messagesContainer.scrollHeight;
+
+                            // Додаємо повідомлення на початок
+                            data.messages.reverse().forEach(msg => {
+                                const msgDiv = document.createElement('div');
+                                msgDiv.className = `message-wrapper ${msg.sender_id === userId ? 'own' : 'other'}`;
+                                msgDiv.innerHTML = `
+                                    ${msg.sender_id !== userId ? `<div class="message-sender">${msg.sender}</div>` : ''}
+                                    <div class="message-bubble">
+                                        ${msg.text}
+                                        <div class="message-time">${new Date(msg.created_at).toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'})}</div>
+                                    </div>
+                                `;
+                                messagesContainer.insertBefore(msgDiv, messagesContainer.firstChild);
+                            });
+
+                            // Відновлюємо прокрутку
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight - scrollHeight;
+
+                            currentPage++;
+                            if (!data.has_next) {
+                                btn.remove();
+                            } else {
+                                btn.disabled = false;
+                                btn.textContent = 'Завантажити попередні повідомлення';
+                            }
+                        } else {
+                            btn.remove();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Помилка завантаження:', error);
+                        btn.disabled = false;
+                        btn.textContent = 'Помилка, спробуйте знову';
+                    });
+            }
+        }
+
+        // Обробники подій
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Запуск підключення
+        connectWebSocket();
+
+        // Прокрутка вниз при завантаженні
+        window.onload = function() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            updateDebug();
+        };
+
+        // Оновлення debug кожні 2 секунди
+        setInterval(updateDebug, 2000);
+    </script>
+</body>
+</html>
