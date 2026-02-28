@@ -11,6 +11,7 @@ from authentication.models import User
 
 user_action_logger = logging.getLogger("user_actions")
 
+
 def index(request):
     games = Game.objects.all()
     latest_services = Service.objects.select_related("game", "author").order_by("-id")[
@@ -77,21 +78,28 @@ def service_catalog(request):
 
 def service_detail(request, pk):
     service = get_object_or_404(Service.objects.select_related("author", "game"), pk=pk)
-    avg_rating = service.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
-    
+    avg_rating = service.reviews.aggregate(Avg("rating"))["rating__avg"] or 0
+
     full_stars = int(avg_rating)
-    
+
     user_already_reviewed = False
     if request.user.is_authenticated:
-        user_already_reviewed = Review.objects.filter(service=service, author=request.user).exists()
-    
-    return render(request, 'games/service_detail.html', {
-        'service': service,
-        'avg_rating': round(avg_rating, 1),
-        'full_stars': range(full_stars),
-        'empty_stars': range(5 - full_stars),
-        'user_already_reviewed': user_already_reviewed
-    })
+        user_already_reviewed = Review.objects.filter(
+            service=service, author=request.user
+        ).exists()
+
+    return render(
+        request,
+        "games/service_detail.html",
+        {
+            "service": service,
+            "avg_rating": round(avg_rating, 1),
+            "full_stars": range(full_stars),
+            "empty_stars": range(5 - full_stars),
+            "user_already_reviewed": user_already_reviewed,
+        },
+    )
+
 
 @login_required
 def service_delete(request, pk):
@@ -117,7 +125,7 @@ def service_create(request):
                 f"✅CREATE: Обьявление {service.title} создано автором {request.user}"
             )
             return redirect("profile")
-            
+
     else:
         form = ServiceForm()
     return render(
@@ -154,6 +162,9 @@ def add_review(request, service_id):
             review.service = service
             review.author = request.user
             review.save()
+            user_action_logger.info(
+                f"✅CREATE: Пользыватель {request.user} оставил отзыв под обьявлением {service.title}"
+            )
     return redirect("service_detail", pk=service_id)
 
 

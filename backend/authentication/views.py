@@ -50,7 +50,6 @@ def merge_cart_from_cookies(request, user):
             continue
 
 
-
 def is_blocked(ip, email):
     key = f"login_attempts:{ip}:{email}"
     attempts = cache.get(key, 0)
@@ -71,20 +70,16 @@ def register_view(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-
             user = form.save(commit=False)
-            
+
             user.is_active = False
             user.is_verified = False
             user.save()
 
-
             code = create_verification(user)
             send_verification_email(user, code)
 
-
             request.session["verification_user_id"] = user.id
-
 
             user_action_logger.info(
                 f"✅ РЕГИСТРАЦИЯ: Пользователь {user.email} (ник: {user.username}) зарегистрировался"
@@ -99,13 +94,13 @@ def register_view(request):
             for error_list in form.errors.values():
                 for error in error_list:
                     messages.error(request, error)
-            
+
             user_action_logger.warning(
                 f"❗ РЕГИСТРАЦИЯ: Пользователь {user.email} получил предупреждение по этим пунктам {error_list}"
             )
     else:
         form = CustomUserCreationForm()
-    
+
     return render(request, "authentication/register.html", {"form": form})
 
 
@@ -128,7 +123,6 @@ def verify_email_view(request):
             user.save()
             login(request, user)
 
-
             user_action_logger.info(
                 f"✅ ПОДТВЕРЖДЕНИЕ: Пользователь {user.email} подтвердил email"
             )
@@ -136,7 +130,9 @@ def verify_email_view(request):
             messages.success(request, "Email подтверждён! Добро пожаловать.")
             return redirect("catalog")
         else:
-            user_action_logger.warning(f"Неудачная попытка подтверждения email для {user.email}")
+            user_action_logger.warning(
+                f"Неудачная попытка подтверждения email для {user.email}"
+            )
 
             messages.error(request, "Неверный или просроченный код.")
 
@@ -161,17 +157,15 @@ def login_view(request):
                 login(request, user)
                 request.session.set_expiry(60 * 60 * 24 * 7)
 
-                
                 response = redirect("catalog")
 
-                
                 merge_cart_from_cookies(request, user)
                 response.delete_cookie("cart")
 
                 user_action_logger.info(f"✅ ВХОД: {email}")
 
                 messages.success(request, "Вы успешно вошли.")
-                return response  
+                return response
             else:
                 messages.error(request, "Email не подтверждён.")
                 return redirect("login")

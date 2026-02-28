@@ -11,7 +11,7 @@ from .views import (
     service_detail,
     index,
     add_review,
-    seller_profile
+    seller_profile,
 )
 
 urlpatterns = [

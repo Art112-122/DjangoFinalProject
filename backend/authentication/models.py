@@ -2,6 +2,7 @@
 Custom User model
 Email используется как username
 """
+
 from django.db.models import Avg
 from django.contrib.auth.models import AbstractUser
 from django.db import models

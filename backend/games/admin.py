@@ -7,18 +7,23 @@ class ServiceInline(admin.TabularInline):
     model = Service
     extra = 0
     classes = ("collapse",)
-    readonly_fields = ("preview_small",)
-    fields = ("preview_small", "title", "price", "author", "get_avr_rating")
+    readonly_fields = ("preview_small", "avg_rating_display")
+    fields = ("preview_small", "title", "price", "author", "avg_rating_display")
 
-    def get_avg_rating(self, obj):
-        from django.db.models import Avg
+    def avg_rating_display(self, obj):
+        try:
+            raw_avg = obj.get_average_rating()
+            avg_value = float(raw_avg) if raw_avg else 0.0
+        except (ValueError, TypeError):
+            avg_value = 0.0
 
-        avg = obj.reviews.aggregate(Avg("rating"))["rating__avg"]
-        if avg:
-            return format_html('<b style="color: #f39c12;">{:.1f} ★</b>', avg)
-        return "Нет оценок"
+        rating_text = f"{avg_value:.1f}"
 
-    get_avg_rating.short_description = "Рейтинг"
+        if avg_value > 0:
+            return format_html('<b style="color: #f39c12;">{} ★</b>', rating_text)
+        return "0.0"
+
+    avg_rating_display.short_description = "Рейтинг"
 
     def preview_small(self, obj):
         if obj.image:
@@ -77,12 +82,19 @@ class GameAdmin(admin.ModelAdmin):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ("preview_image", "title", "game", "price", "author")
+    list_display = (
+        "preview_image",
+        "title",
+        "game",
+        "price",
+        "author",
+        "admin_rating_display",
+    )
     list_display_links = ("title",)
     list_editable = ("price",)
     list_filter = ("game",)
     search_fields = ("title", "description")
-    readonly_fields = ("preview_large",)
+    readonly_fields = ("preview_large", "admin_rating_display")
 
     fieldsets = (
         (
@@ -94,6 +106,25 @@ class ServiceAdmin(admin.ModelAdmin):
         ("Основное", {"fields": ("title", "game", "author", "price")}),
         ("Контент", {"fields": ("description",)}),
     )
+
+    def admin_rating_display(self, obj):
+        try:
+            avg_val = (
+                float(obj.get_average_rating()) if obj.get_average_rating() else 0.0
+            )
+        except (ValueError, TypeError):
+            avg_val = 0.0
+
+        rating_str = f"{avg_val:.1f}"
+
+        if avg_val > 0:
+            return format_html(
+                '<span style="color: #f39c12; font-weight: bold;">★ {}</span>',
+                rating_str,
+            )
+        return format_html('<span style="color: #ccc;">☆ 0.0</span>')
+
+    admin_rating_display.short_description = "Рейтинг"
 
     def preview_image(self, obj):
         if obj.image:
@@ -138,4 +169,3 @@ class ReviewAdmin(admin.ModelAdmin):
         return "★" * obj.rating + "☆" * (5 - obj.rating)
 
     rating_stars.short_description = "Рейтинг"
-

@@ -1,6 +1,7 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.conf import settings
+from django.db.models import Avg
 
 
 class Game(models.Model):
@@ -27,13 +28,10 @@ class Service(models.Model):
     image = models.ImageField(upload_to="services/", blank=True, null=True)
 
     def get_average_rating(self):
-        from django.db.models import Avg
-
         return self.reviews.aggregate(Avg("rating"))["rating__avg"] or 0
 
     def __str__(self):
         return f"{self.title} ({self.game.name})"
-
 
 
 class Cart(models.Model):
@@ -68,7 +66,7 @@ class CartItem(models.Model):
     @property
     def total_price(self):
         return self.game.price * self.quantity
-    
+
 
 class Review(models.Model):
     service = models.ForeignKey(
