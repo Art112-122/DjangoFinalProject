@@ -3,7 +3,6 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from chat.models import ChatRoom, Message
 from django.contrib.auth import get_user_model
-from datetime import datetime
 
 User = get_user_model()
 
@@ -24,7 +23,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.close()
                 return
 
-            # Добавляем в группу Redis
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
@@ -33,7 +31,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.accept()
             print(f"✅ WebSocket через REDIS подключен: {self.user.username} в комнате {self.room_id}")
 
-            # Уведомляем всех что пользователь онлайн
+            await self.mark_messages_as_read()
+            
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -43,7 +42,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "status": "online"
                 }
             )
-
         except Exception as e:
             print(f"❌ Ошибка подключения: {str(e)}")
             await self.close()
@@ -51,7 +49,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         try:
             if hasattr(self, 'room_group_name') and hasattr(self, 'user'):
-                # Уведомляем что пользователь офлайн
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
@@ -62,7 +59,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
 
-                # Удаляем из группы Redis
                 await self.channel_layer.group_discard(
                     self.room_group_name,
                     self.channel_name
@@ -77,47 +73,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message_type = data.get("type", "message")
 
             if message_type == "message":
-                message = data.get("message", "").strip()
-
-                if not message:
+                message_text = data.get("message", "").strip()
+                if not message_text:
                     return
 
-                if len(message) > 5000:
-                    await self.send(text_data=json.dumps({
-                        "type": "error",
-                        "error": "Сообщение слишком длинное"
-                    }))
-                    return
+                saved_message = await self.save_message(self.user.id, message_text)
 
-                # Сохраняем в базу
-                saved_message = await self.save_message(self.user.id, message)
-
-                # Отправляем через Redis ВСЕМ в комнате
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
                         "type": "chat_message",
                         "message": saved_message["text"],
-                        "user": saved_message["sender__username"],
+                        "user": saved_message["username"], # Тут должно быть username
                         "user_id": saved_message["sender_id"],
-                        "created_at": saved_message["created_at"].isoformat() if saved_message["created_at"] else None,
-                    }
+                        "created_at": saved_message["created_at"],
+                        "is_read": saved_message["is_read"],
+                    },
                 )
-
-            elif message_type == "ping":
-                await self.send(text_data=json.dumps({"type": "pong"}))
-
         except Exception as e:
             print(f"❌ Ошибка: {str(e)}")
 
     async def chat_message(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "new_message",
-            "message": event["message"],
-            "user": event["user"],
-            "user_id": event["user_id"],
-            "created_at": event["created_at"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "new_message",
+                    "message": event["message"],
+                    "user": event["user"],
+                    "user_id": event["user_id"],
+                    "created_at": event["created_at"],
+                    "is_read": event.get("is_read", False),
+                }
+            )
+        )
 
     async def user_status(self, event):
         await self.send(text_data=json.dumps({
@@ -127,6 +115,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "status": event["status"],
         }))
 
+    @database_sync_to_async
+    def mark_messages_as_read(self):
+        Message.objects.filter(room_id=self.room_id, is_read=False).exclude(
+            sender=self.user
+        ).update(is_read=True)
+    
     @database_sync_to_async
     def get_room(self):
         try:
@@ -139,11 +133,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = Message.objects.create(
             room_id=self.room_id,
             sender_id=user_id,
-            text=text
+            text=text,
+            is_read=False # Не забудь про поле непрочитанных
         )
         return {
             "text": message.text,
             "sender_id": message.sender_id,
-            "sender__username": message.sender.username,
-            "created_at": message.created_at
-        }
+            "username": message.sender.username, # Поменяли ключ на username
+            "created_at": message.created_at.isoformat(), # Сразу в строку
+            "is_read": message.is_read}

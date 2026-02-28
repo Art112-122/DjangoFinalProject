@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from chat.models import ChatRoom, Message
+from chat.models import ChatRoom
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,12 +19,19 @@ def chat_list(request):
 
     all_rooms = []
     for room in rooms_as_buyer:
-        last_message = room.messages.order_by('-created_at').first()
-        all_rooms.append({
-            'room': room,
-            'other_user': room.seller,
-            'last_message': last_message
-        })
+        last_message = room.messages.order_by("-created_at").first()
+        unread_count = (
+            room.messages.filter(is_read=False).exclude(sender=request.user).count()
+        )
+
+        all_rooms.append(
+            {
+                "room": room,
+                "other_user": room.seller,
+                "last_message": last_message,
+                "unread_count": unread_count,  # Передаем в шаблон
+            }
+        )
 
     for room in rooms_as_seller:
         last_message = room.messages.order_by('-created_at').first()
@@ -44,42 +52,31 @@ def chat_list(request):
 
 
 @login_required
-def find_or_create_chat(request):
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
+def start_chat_with_seller(request, seller_id):
+    seller = get_object_or_404(User, id=seller_id)
 
-        if not username:
-            messages.error(request, 'Введите имя пользователя')
-            return redirect('chat:find_or_create_chat')
+    if request.user == seller:
+        messages.error(request, 'Вы не можете начать чат с самим собой.')
+        return redirect('chat:chat_list')
+    room = ChatRoom.objects.filter(
+        (Q(buyer=request.user) & Q(seller=seller)) |
+        (Q(buyer=seller) & Q(seller=request.user))
+    ).first()
+    if not room:
+        room = ChatRoom.objects.create(buyer=request.user, seller=seller)
+        logger.info(f"Создан новый чат ID {room.id} между {request.user} и {seller}")
 
-        try:
-            other_user = User.objects.get(username__iexact=username)
-
-            if other_user == request.user:
-                messages.error(request, 'Нельзя начать чат с самим собой')
-                return redirect('chat:find_or_create_chat')
-
-            room = ChatRoom.objects.filter(buyer=request.user, seller=other_user).first()
-            if not room:
-                room = ChatRoom.objects.filter(buyer=other_user, seller=request.user).first()
-
-            if not room:
-                room = ChatRoom.objects.create(buyer=request.user, seller=other_user)
-                messages.success(request, f'Чат с {other_user.username} создан!')
-
-            return redirect('chat:chat_room', room_id=room.id)
-
-        except User.DoesNotExist:
-            messages.error(request, f'Пользователь "{username}" не найден')
-            return redirect('chat:find_or_create_chat')
-
-    return render(request, 'chat/find_user.html')
+    return redirect('chat:chat_room', room_id=room.id)
 
 
 @login_required
 def chat_room(request, room_id):
     room = get_object_or_404(ChatRoom.objects.select_related('buyer', 'seller'), id=room_id)
 
+    room.messages.filter(is_read=False).exclude(sender=request.user).update(
+        is_read=True
+    )
+    
     if request.user not in [room.buyer, room.seller]:
         messages.error(request, 'Нет доступа к чату')
         return redirect('chat:chat_list')
@@ -100,24 +97,6 @@ def chat_room(request, room_id):
         "room_id": room_id,
     }
     return render(request, "chat/chat_room.html", context)
-
-
-@login_required
-def start_chat_with_seller(request, seller_id):
-    seller = get_object_or_404(User, id=seller_id)
-
-    if request.user == seller:
-        messages.error(request, 'Нельзя начать чат с самим собой')
-        return redirect('chat:chat_list')
-
-    room = ChatRoom.objects.filter(buyer=request.user, seller=seller).first()
-    if not room:
-        room = ChatRoom.objects.filter(buyer=seller, seller=request.user).first()
-
-    if not room:
-        room = ChatRoom.objects.create(buyer=request.user, seller=seller)
-
-    return redirect('chat:chat_room', room_id=room.id)
 
 
 @login_required

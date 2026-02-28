@@ -1,101 +1,131 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Chats</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f0f2f5;
-            padding: 20px;
-        }
-        .container { max-width: 800px; margin: 0 auto; }
-        .header {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .new-chat-btn {
-            background-color: #0084ff;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-        }
-        .chat-list { background-color: white; border-radius: 10px; overflow: hidden; }
-        .chat-item {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #e4e6eb;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-        }
-        .chat-item:hover { background-color: #f5f5f5; }
-        .avatar {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            background-color: #0084ff;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-right: 15px;
-        }
-        .chat-info { flex: 1; }
-        .chat-name { font-weight: 600; margin-bottom: 5px; }
-        .last-message { color: #65676b; font-size: 14px; }
-        .timestamp { color: #65676b; font-size: 12px; }
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            background-color: white;
-            border-radius: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>My Chats</h1>
-            <a href="{% url 'chat:find_or_create_chat' %}" class="new-chat-btn">+ New Chat</a>
-        </div>
+{% extends 'base.html' %}
+{% load static %}
 
-        {% if rooms %}
-            <div class="chat-list">
-                {% for item in rooms %}
-                    <a href="{% url 'chat:chat_room' room_id=item.room.id %}" class="chat-item">
-                        <div class="avatar">{{ item.other_user.username|first|upper }}</div>
-                        <div class="chat-info">
-                            <div class="chat-name">{{ item.other_user.username }}</div>
-                            {% if item.last_message %}
-                                <div class="last-message">
-                                    {% if item.last_message.sender == request.user %}You: {% endif %}
-                                    {{ item.last_message.text|truncatechars:50 }}
-                                </div>
-                            {% else %}
-                                <div class="last-message" style="color: #999;">No messages yet</div>
-                            {% endif %}
-                        </div>
-                        {% if item.last_message %}
-                            <div class="timestamp">{{ item.last_message.created_at|timesince }} ago</div>
-                        {% endif %}
-                    </a>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <p>You have no chats yet</p>
-                <a href="{% url 'chat:find_or_create_chat' %}">Start a new chat</a>
-            </div>
+{% block content %}
+<div class="chat-page-wrapper">
+    <div class="container py-5">
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-dismissible fade show shadow-sm rounded-4 {% if message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} mb-4">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
         {% endif %}
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                
+                <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+                    <h2 class="fw-bold m-0">Мої повідомлення</h2>
+                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 shadow-sm">
+                        Всього чатів: {{ rooms|length }}
+                    </span>
+                </div>
+
+                {% if rooms %}
+                    <div class="chat-list-container shadow-lg rounded-4 overflow-hidden bg-white">
+                        {% for item in rooms %}
+                            <a href="{% url 'chat:chat_room' room_id=item.room.id %}" class="chat-item-link">
+                                <div class="chat-item d-flex align-items-center p-3 border-bottom transition">
+                                    
+                                    <div class="position-relative me-3">
+                                        {% if item.other_user.avatar %}
+                                            <img src="{{ item.other_user.avatar.url }}" class="rounded-circle shadow-sm" width="55" height="55" style="object-fit: cover;">
+                                        {% else %}
+                                            <div class="avatar-placeholder rounded-circle shadow-sm bg-gradient text-white d-flex align-items-center justify-content-center fw-bold" style="width: 55px; height: 55px; font-size: 20px;">
+                                                {{ item.other_user.username|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 class="fw-bold mb-0 text-dark">{{ item.other_user.username }}</h6>
+                                            
+                                            {% if item.unread_count > 0 %}
+                                                <span class="badge rounded-pill bg-primary animate-bounce">
+                                                    {{ item.unread_count }}
+                                                </span>
+                                            {% else %}
+                                                <small class="text-muted" style="font-size: 0.75rem;">
+                                                    {{ item.last_message.created_at|timesince }} тому
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="last-message-text text-truncate pe-3">
+                                            {% if item.last_message %}
+                                                <span class="{% if item.last_message.sender == request.user %}text-primary fw-medium{% else %}text-muted{% endif %}">
+                                                    {% if item.last_message.sender == request.user %}Ви: {% endif %}
+                                                    {{ item.last_message.text|truncatechars:60 }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted fst-italic small">Повідомлень ще немає...</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ms-2 text-muted opacity-25">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="card border-0 shadow-lg rounded-4 p-5 text-center bg-white">
+                        <div class="mb-4">
+                            <span class="display-1 text-muted opacity-25">💬</span>
+                        </div>
+                        <h4 class="fw-bold">У вас ще немає чатів</h4>
+                        <p class="text-muted mb-4">Перейдіть на сторінку послуги, щоб почати спілкування з продавцем.</p>
+                        <a href="/" class="btn btn-primary rounded-pill px-5 py-2">До списку послуг</a>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
     </div>
-</body>
-</html>
+</div>
+
+<style>
+    .chat-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: calc(100vh - 56px);
+        width: 100%;
+    }
+
+    .chat-item-link {
+        text-decoration: none;
+        display: block;
+    }
+
+    .chat-item {
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+    }
+
+    .chat-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .avatar-placeholder {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .last-message-text {
+        font-size: 0.9rem;
+    }
+
+    .transition {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .chat-item:last-child {
+        border-bottom: none !important;
+    }
+</style>
+{% endblock %}

@@ -55,9 +55,10 @@
               <strong>{{ user.username }}</strong>
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow">
-              <li><a class="dropdown-item" href="{% url 'profile' %}">👤 Профиль</a></li>
+              <li><a class="dropdown-item" href="{% url 'profile' %}">👤 Profile</a></li>
+              <li><a class="dropdown-item" href="{% url 'chat:chat_list' %}">💬 Chat</a></li>
               <li><hr class="dropdown-divider" /></li>
-              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Выйти</a></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Log out</a></li>
             </ul>
           </div>
         {% else %}

@@ -10,22 +10,22 @@ class ChatRoom(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="buyer_rooms",
-        db_index=True
+        db_index=True,
     )
     seller = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="seller_rooms",
-        db_index=True
+        db_index=True,
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         indexes = [
-            Index(fields=['buyer', 'seller']),
-            Index(fields=['created_at']),
+            Index(fields=["buyer", "seller"]),
+            Index(fields=["created_at"]),
         ]
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Chat between {self.buyer.username} and {self.seller.username}"
@@ -33,25 +33,21 @@ class ChatRoom(models.Model):
 
 class Message(models.Model):
     room = models.ForeignKey(
-        ChatRoom,
-        on_delete=models.CASCADE,
-        related_name="messages",
-        db_index=True
+        ChatRoom, on_delete=models.CASCADE, related_name="messages", db_index=True
     )
     sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        db_index=True
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True
     )
     text = models.TextField()
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         indexes = [
-            Index(fields=['room', 'created_at']),
-            Index(fields=['created_at']),
+            Index(fields=["room", "created_at"]),
+            Index(fields=["created_at"]),
         ]
-        ordering = ['created_at']
+        ordering = ["created_at"]
 
     def __str__(self):
         return f"{self.sender.username}: {self.text[:50]}"
