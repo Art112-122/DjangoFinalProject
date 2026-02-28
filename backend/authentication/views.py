@@ -96,7 +96,7 @@ def register_view(request):
                     messages.error(request, error)
 
             user_action_logger.warning(
-                f"❗ РЕГИСТРАЦИЯ: Пользователь {user.email} получил предупреждение по этим пунктам {error_list}"
+                f"❗ РЕГИСТРАЦИЯ: Пользователь {request.POST.get('email', 'Неизвестный')} получил предупреждение по этим пунктам {error_list}"
             )
     else:
         form = CustomUserCreationForm()
