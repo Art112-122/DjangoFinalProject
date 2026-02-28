@@ -30,6 +30,9 @@ class Service(models.Model):
     def get_average_rating(self):
         return self.reviews.aggregate(Avg("rating"))["rating__avg"] or 0
 
+    class Meta:
+        ordering = ["-id"]
+
     def __str__(self):
         return f"{self.title} ({self.game.name})"
 

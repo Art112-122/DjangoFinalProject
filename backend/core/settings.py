@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -73,12 +74,35 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "sqlite3.db",
+DATABASE_URL = os.getenv("DATABASE_URL")
+AUTH_URL = os.getenv("AUTH_URL")
+
+
+if DATABASE_URL and AUTH_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600),
+        "auth_db": dj_database_url.parse(AUTH_URL, conn_max_age=600)
     }
+else:
+    raise ValueError("DATABASE_URL не найден в .env")
+
+
+
+
+REDIS_URL = os.getenv('REDIS_URL')
+
+if not REDIS_URL:
+    raise ValueError("❌ REDIS_URL не знайдено в .env файлі!")
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [REDIS_URL],
+        },
+    },
 }
+
 
 
 # Password validation
