@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4">Корзина услуг</h2>
+    <h2 class="mb-4">Корзина</h2>
 
     {% if services %}
     <div class="table-responsive">
@@ -13,26 +13,28 @@
             <thead class="table-light">
                 <tr>
                     <th>Игра</th>
-                    <th>Услуга</th>
+                    <th>Обьявление</th>
                     <th>Цена</th>
                     <th>Действие</th>
                 </tr>
             </thead>
             <tbody>
                 {% for service in services %}
-                <tr id="service-row-{{ service.id }}">
-                    <td>
-                        <span class="badge bg-info text-dark">{{ service.game.name }}</span>
-                    </td>
-                    <td><strong>{{ service.title }}</strong></td>
-                    <td>{{ service.price }} $</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger remove-item" 
-                                data-id="{{ service.id }}">
-                            Удалить
-                        </button>
-                    </td>
-                </tr>
+                
+                    <tr id="service-row-{{ service.id }}">
+                        <td>
+                            <a href="{% url 'catalog' %}?game={{ service.game.id }}"><span class="badge bg-info text-dark">{{ service.game.name }}</span></a>
+                        </td>
+                        <td><strong><a href="{% url 'service_detail' service.id %}">{{ service.title }}</a></strong></td>
+                        <td>{{ service.price }} $</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger remove-item" 
+                                    data-id="{{ service.id }}">
+                                Удалить
+                            </button>
+                        </td>
+                    </tr>
+                
                 {% endfor %}
             </tbody>
         </table>
@@ -41,7 +43,6 @@
     <div class="d-flex justify-content-end mt-4">
         <div class="text-end">
             <h4>Итого: <span id="total-price">{{ total_price }}</span> $</h4>
-            <a href="#" class="btn btn-primary btn-lg mt-2">Оформить заказ</a>
         </div>
     </div>
     {% else %}

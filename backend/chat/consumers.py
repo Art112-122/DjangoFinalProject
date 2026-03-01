@@ -23,24 +23,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.close()
                 return
 
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
             await self.accept()
-            print(f"✅ WebSocket через REDIS подключен: {self.user.username} в комнате {self.room_id}")
+            print(
+                f"✅ WebSocket через REDIS подключен: {self.user.username} в комнате {self.room_id}"
+            )
 
             await self.mark_messages_as_read()
-            
+
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "user_status",
                     "user_id": self.user.id,
                     "username": self.user.username,
-                    "status": "online"
-                }
+                    "status": "online",
+                },
             )
         except Exception as e:
             print(f"❌ Ошибка подключения: {str(e)}")
@@ -48,20 +47,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         try:
-            if hasattr(self, 'room_group_name') and hasattr(self, 'user'):
+            if hasattr(self, "room_group_name") and hasattr(self, "user"):
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
                         "type": "user_status",
                         "user_id": self.user.id,
                         "username": self.user.username,
-                        "status": "offline"
-                    }
+                        "status": "offline",
+                    },
                 )
 
                 await self.channel_layer.group_discard(
-                    self.room_group_name,
-                    self.channel_name
+                    self.room_group_name, self.channel_name
                 )
 
         except Exception as e:
@@ -84,7 +82,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     {
                         "type": "chat_message",
                         "message": saved_message["text"],
-                        "user": saved_message["username"], # Тут должно быть username
+                        "user": saved_message["username"],  # Тут должно быть username
                         "user_id": saved_message["sender_id"],
                         "created_at": saved_message["created_at"],
                         "is_read": saved_message["is_read"],
@@ -108,23 +106,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def user_status(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "status_update",
-            "user_id": event["user_id"],
-            "username": event["username"],
-            "status": event["status"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "status_update",
+                    "user_id": event["user_id"],
+                    "username": event["username"],
+                    "status": event["status"],
+                }
+            )
+        )
 
     @database_sync_to_async
     def mark_messages_as_read(self):
         Message.objects.filter(room_id=self.room_id, is_read=False).exclude(
             sender=self.user
         ).update(is_read=True)
-    
+
     @database_sync_to_async
     def get_room(self):
         try:
-            return ChatRoom.objects.select_related('buyer', 'seller').get(id=self.room_id)
+            return ChatRoom.objects.select_related("buyer", "seller").get(
+                id=self.room_id
+            )
         except ChatRoom.DoesNotExist:
             return None
 
@@ -134,11 +138,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             room_id=self.room_id,
             sender_id=user_id,
             text=text,
-            is_read=False # Не забудь про поле непрочитанных
+            is_read=False,  # Не забудь про поле непрочитанных
         )
         return {
             "text": message.text,
             "sender_id": message.sender_id,
-            "username": message.sender.username, # Поменяли ключ на username
-            "created_at": message.created_at.isoformat(), # Сразу в строку
-            "is_read": message.is_read}
+            "username": message.sender.username,  # Поменяли ключ на username
+            "created_at": message.created_at.isoformat(),  # Сразу в строку
+            "is_read": message.is_read,
+        }

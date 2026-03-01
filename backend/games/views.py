@@ -1,7 +1,9 @@
 import logging
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Avg
+from django.db.models import Avg, Value
+from django.db.models.functions import Coalesce
+from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -52,7 +54,8 @@ def game_catalog_view(request):
 
 def service_catalog(request):
     game_id = request.GET.get("game")
-    search_query = request.GET.get("search")  # Получаем текст поиска
+    search_query = request.GET.get("search")
+    sort = request.GET.get("sort", "-created_at")
 
     services = Service.objects.all()
 
@@ -65,13 +68,30 @@ def service_catalog(request):
     if search_query:
         services = services.filter(title__icontains=search_query)
 
+    if sort == "price_asc":
+        services = services.order_by("price", "-id")
+    elif sort == "price_desc":
+        services = services.order_by("-price", "-id")
+    elif sort == "rating":
+        from django.db.models import Avg
+
+        services = services.annotate(
+            avg_rating=Coalesce(Avg("reviews__rating"), Value(0.0))
+        ).order_by("-avg_rating", "-id")
+    else:
+        services = services.order_by("-id")
+
+    paginator = Paginator(services, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
     return render(
         request,
         "games/catalog.html",
         {
             "game": game_obj,
-            "services": services,
+            "services": page_obj,
             "search_query": search_query,
+            "current_sort": sort,
         },
     )
 

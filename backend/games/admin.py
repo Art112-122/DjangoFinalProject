@@ -122,7 +122,7 @@ class ServiceAdmin(admin.ModelAdmin):
                 '<span style="color: #f39c12; font-weight: bold;">★ {}</span>',
                 rating_str,
             )
-        return format_html('<span style="color: #ccc;">☆ 0.0</span>')
+        return format_html('<span style="color: #ccc;">☆ 0.0</span>', "")
 
     admin_rating_display.short_description = "Рейтинг"
 

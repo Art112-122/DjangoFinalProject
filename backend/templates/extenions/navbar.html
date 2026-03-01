@@ -16,9 +16,9 @@
 
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-link active" aria-current="page" href="/">Home</a>
+        <a class="nav-link active" aria-current="page" href="/">Главная</a>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="gameCatalogDropdown" role="button" data-bs-toggle="dropdown">Catalog</a>
+          <a class="nav-link dropdown-toggle" href="#" id="gameCatalogDropdown" role="button" data-bs-toggle="dropdown">Каталог</a>
           <ul class="dropdown-menu shadow" style="width: 280px;">
             <li class="px-3 py-2">
               <input type="text" class="form-control form-control-sm" id="gameSearchInput" placeholder="Поиск игры..." />
@@ -44,7 +44,7 @@
 
       <div class="navbar-nav ms-auto align-items-center">
         <a href="{% url 'cart' %}" class="btn btn-outline-dark position-relative me-3">
-          🛒 Cart
+          🛒 Корзина
           <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
         </a>
 
@@ -55,10 +55,10 @@
               <strong>{{ user.username }}</strong>
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow">
-              <li><a class="dropdown-item" href="{% url 'profile' %}">👤 Profile</a></li>
-              <li><a class="dropdown-item" href="{% url 'chat:chat_list' %}">💬 Chat</a></li>
+              <li><a class="dropdown-item" href="{% url 'profile' %}">👤 Профиль</a></li>
+              <li><a class="dropdown-item" href="{% url 'chat:chat_list' %}">💬 Чаты</a></li>
               <li><hr class="dropdown-divider" /></li>
-              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Log out</a></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Выйти</a></li>
             </ul>
           </div>
         {% else %}
