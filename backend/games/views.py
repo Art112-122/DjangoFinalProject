@@ -173,6 +173,9 @@ def service_edit(request, pk):
     )
 
 
+# Cart and Review
+
+
 def add_review(request, service_id):
     service = Service.objects.get(id=service_id)
     if request.method == "POST" and request.user.is_authenticated:
@@ -239,6 +242,9 @@ def remove_from_cart(request, service_id):
 def get_cart_count(request):
     cart = request.session.get("cart", [])
     return JsonResponse({"total_items": len(cart)})
+
+
+# Profile
 
 
 def seller_profile(request, email):

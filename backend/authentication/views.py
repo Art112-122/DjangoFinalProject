@@ -24,6 +24,9 @@ LOGIN_ATTEMPTS_LIMIT = 5
 LOGIN_BLOCK_TIME = 300
 
 
+# Helpers
+
+
 def merge_cart_from_cookies(request, user):
     cart_cookie = request.COOKIES.get("cart")
     if not cart_cookie:
@@ -64,6 +67,9 @@ def register_failed_attempt(ip, email):
 
 def home(request):
     return render(request, "games/catalog.html")
+
+
+# Register and email
 
 
 def register_view(request):
@@ -139,6 +145,9 @@ def verify_email_view(request):
     return render(request, "authentication/verify_email.html")
 
 
+# Login and logout
+
+
 def login_view(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -186,6 +195,9 @@ def logout_view(request):
     logout(request)
     messages.info(request, "Вы вышли из системы.")
     return redirect("login")
+
+
+# Profile
 
 
 def profile_view(request):

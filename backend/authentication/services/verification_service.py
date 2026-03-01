@@ -5,7 +5,6 @@ Email verification:
 - Hashed code
 """
 
-import random
 from django.core.cache import cache
 from django.contrib.auth.hashers import make_password, check_password
 import secrets
