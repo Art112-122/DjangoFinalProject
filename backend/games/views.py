@@ -15,7 +15,7 @@ user_action_logger = logging.getLogger("user_actions")
 
 
 def index(request):
-    games = Game.objects.all()
+    games = Game.objects.all().order_by("-id")[:6]
     latest_services = Service.objects.select_related("game", "author").order_by("-id")[
         :6
     ]
