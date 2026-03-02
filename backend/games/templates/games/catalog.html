@@ -30,10 +30,51 @@
       </div>
     </form>
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="dropdown">
+        <button class="btn btn-outline-dark dropdown-toggle rounded-pill px-4" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-sort-down me-2"></i>
+            {% if current_sort == "price_asc" %}📉 Дешевле
+            {% elif current_sort == "price_desc" %}📈 Дороже
+            {% elif current_sort == "rating" %}⭐ По рейтингу
+            {% else %}✨ Новинки{% endif %}
+        </button>
+        <ul class="dropdown-menu shadow border-0 mt-2" aria-labelledby="sortDropdown">
+                <li>
+                    <a class="dropdown-item {% if current_sort == '-created_at' %}active{% endif %}" 
+                      href="?sort=-created_at{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                      ✨ Новинки
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if current_sort == 'price_asc' %}active{% endif %}" 
+                      href="?sort=price_asc{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                      📉 Сначала дешевле
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if current_sort == 'price_desc' %}active{% endif %}" 
+                      href="?sort=price_desc{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                      📈 Сначала дороже
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item {% if current_sort == 'rating' %}active{% endif %}" 
+                      href="?sort=rating{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                      ⭐ По рейтингу
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% if search_query %}
+        <span class="text-muted small">Найдено: {{ services.paginator.count }}</span>
+        {% endif %}
+    </div>
+
     {% if search_query %}
       <p class="mt-2 text-muted small">
         Результаты поиска по запросу: <strong>"{{ search_query }}"</strong>
-        <a href="{% url 'catalog' %}{% if game %}?game={{ game.id }}{% endif %}"
+        <a href="{% url 'catalog' %}{% if game %}?game={{ game.id }}&sort={{ current_sort }}{% endif %}"
           class="ms-2 text-danger text-decoration-none">
           Сбросить
         </a>
@@ -94,7 +135,49 @@
         </div>
       {% endfor %}
     </div>
+
+    {% if services.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            
+            {% if services.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ services.previous_page_number }}&sort={{ current_sort }}{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                        &laquo; Назад
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Назад</span></li>
+            {% endif %}
+
+            {% for i in services.paginator.page_range %}
+                {% if services.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}&sort={{ current_sort }}{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            {{ i }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if services.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ services.next_page_number }}&sort={{ current_sort }}{% if game %}&game={{ game.id }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                        Вперед &raquo;
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Вперед &raquo;</span></li>
+            {% endif %}
+
+        </ul>
+    </nav>
+    {% endif %}
   </div>
+
+
 
   <style>
     .hover-primary:hover { color: #0d6efd !important; text-decoration: underline; }

@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="chat-page-wrapper">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden chat-main-card">
+                    
+                    <div class="card-header border-0 py-3 px-4 chat-header-custom">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center text-white">
+                                <div class="position-relative me-3">
+                                    <img src="{{ other_user.avatar.url }}" class="rounded-circle border border-2 border-white shadow-sm" width="48" height="48" style="object-fit: cover;">
+                                    <span id="status-dot" class="position-absolute bottom-0 end-0 badge border border-2 border-white rounded-circle bg-secondary p-1" style="width: 14px; height: 14px;"></span>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ other_user.username }}</h6>
+                                    <small id="status-text" class="opacity-75 text-white">⚪Оффлайн</small>
+                                </div>
+                            </div>
+                            
+                            <div class="connection-badge">
+                                <span id="connection-dot" class="dot bg-danger"></span>
+                                <span id="connection-text">З'єднання...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body bg-light-soft p-4 overflow-auto" id="messages-container">
+                        {% if page_obj.has_next %}
+                            <div class="text-center mb-4">
+                                <button class="btn btn-sm btn-link text-decoration-none text-muted" onclick="loadMoreMessages()" id="load-more-btn">
+                                    Показати старі повідомлення
+                                </button>
+                            </div>
+                        {% endif %}
+
+                        <div id="messages-list" class="d-flex flex-column">
+                            {% for message in messages reversed %}
+                                <div class="message-wrapper mb-3 d-flex flex-column {% if message.sender.id == user_id %}align-items-end{% else %}align-items-start{% endif %}">
+                                    <div class="message-bubble {% if message.sender.id == user_id %}bubble-own{% else %}bubble-other shadow-sm{% endif %}">
+                                        {% if message.sender.id != user_id %}
+                                            <div class="sender-name">{{ message.sender.username }}</div>
+                                        {% endif %}
+                                        <div class="message-text">{{ message.text }}</div>
+                                        <div class="message-time-stamp">
+                                            {{ message.created_at|date:"H:i" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-white border-top-0 p-3">
+                        <div class="input-group chat-input-group shadow-sm rounded-pill overflow-hidden">
+                            <input type="text" id="message-input" class="form-control border-0 px-4 py-2" placeholder="Напишіть щось..." autocomplete="off">
+                            <button class="btn btn-gradient px-4" type="button" id="send-button" onclick="sendMessage()">
+                                🚀
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Фон всей страницы */
+    .chat-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: calc(100vh - 56px); /* Вычитаем высоту набара */
+        display: flex;
+        align-items: center;
+    }
+
+    .chat-main-card {
+        height: 85vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Шапка */
+    .chat-header-custom {
+        background: linear-gradient(to right, #764ba2 0%, #667eea 100%);
+    }
+
+    .connection-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Сообщения */
+    #messages-container {
+        background-color: #f0f2f5;
+        flex: 1;
+    }
+
+    .message-bubble {
+        max-width: 75%;
+        padding: 10px 16px;
+        border-radius: 18px;
+        position: relative;
+        font-size: 15px;
+    }
+
+    .bubble-own {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .bubble-other {
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 4px;
+    }
+
+    .sender-name {
+        font-size: 11px;
+        font-weight: bold;
+        margin-bottom: 2px;
+        color: #764ba2;
+    }
+
+    .message-time-stamp {
+        font-size: 10px;
+        opacity: 0.7;
+        text-align: right;
+        margin-top: 4px;
+    }
+
+    /* Кнопка и инпут */
+    .chat-input-group {
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-gradient:hover {
+        opacity: 0.9;
+        color: white;
+    }
+
+    /* Статус пульс */
+    .status-online-pulse {
+    background-color: #2ecc71 !important; /* Яркий зеленый */
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    animation: status-pulse 1.5s infinite;
+}
+
+@keyframes status-pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(46, 204, 113, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+    }
+}
+</style>
+
+<script>
+    // Все твои существующие скрипты JS остаются почти без изменений, 
+    // меняем только логику обращения к классам Bootstrap.
+
+    const roomId = "{{ room.id }}";
+    const userId = {{ user_id }};
+    const username = "{{ request.user.username }}";
+    const otherUserId = {{ other_user.id }};
+    
+    const messagesContainer = document.getElementById('messages-container');
+    const messagesList = document.getElementById('messages-list'); // Добавлен для удобства
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const connectionDot = document.getElementById('connection-dot');
+    const connectionText = document.getElementById('connection-text');
+    const debugPanel = document.getElementById('debug-panel');
+
+    let socket = null;
+    let isConnected = false;
+    let currentPage = {{ page_obj.number }};
+
+    function updateDebug() {
+        debugPanel.innerHTML = `WebSocket: ${isConnected ? 'OK' : 'OFF'} | ${username} vs ${otherUserId}`;
+    }
+
+    function updateConnectionStatus(connected) {
+        isConnected = connected;
+        if (connected) {
+            connectionDot.className = 'd-inline-block rounded-circle bg-success me-2';
+            connectionText.textContent = 'Підключено';
+            sendButton.disabled = false;
+        } else {
+            connectionDot.className = 'd-inline-block rounded-circle bg-danger me-2';
+            connectionText.textContent = 'Відключено';
+            sendButton.disabled = true;
+        }
+        updateDebug();
+    }
+
+    function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/chat/${roomId}/`;
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => updateConnectionStatus(true);
+        socket.onclose = () => {
+            updateConnectionStatus(false);
+            setTimeout(connectWebSocket, 3000);
+        };
+
+                socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Отримано сигнал:", data);
+
+            if (data.type === 'new_message') {
+                addMessageToChat(data);
+            } 
+            
+            else if (data.type === 'status_update') {
+                if (data.user_id === otherUserId) {
+                    updateUserStatus(data.status);
+                }
+            }
+        };
+    }
+
+    function addMessageToChat(data) {
+    const isOwn = data.user_id === userId;
+    const time = data.created_at 
+        ? new Date(data.created_at).toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'})
+        : new Date().toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'});
+    
+    const html = `
+        <div class="message-wrapper mb-3 d-flex flex-column ${isOwn ? 'align-items-end' : 'align-items-start'}">
+            <div class="message-bubble ${isOwn ? 'bubble-own' : 'bubble-other shadow-sm'}">
+                ${!isOwn ? `<div class="sender-name">${data.user}</div>` : ''}
+                <div class="message-text">${data.message}</div>
+                <div class="message-time-stamp">${time}</div>
+            </div>
+        </div>
+    `;
+    
+    // Вставляем в список
+    const messagesList = document.getElementById('messages-list');
+    if (messagesList) {
+        messagesList.insertAdjacentHTML('beforeend', html);
+        // Плавная прокрутка вниз
+        const container = document.getElementById('messages-container');
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+    function updateUserStatus(status) {
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+
+    if (status === 'online') {
+        statusDot.className = 'position-absolute bottom-0 end-0 badge border border-2 border-white rounded-circle status-online-pulse p-1';
+        statusText.className = 'opacity-100 text-white fw-bold';
+        statusText.textContent = '● В мережі';
+    } else {
+        statusDot.className = 'position-absolute bottom-0 end-0 badge border border-2 border-white rounded-circle bg-secondary p-1';
+        statusText.className = 'opacity-75 text-white';
+        statusText.textContent = '⚪ Офлайн';
+    }
+}
+
+    function sendMessage() {
+        const text = messageInput.value.trim();
+        if (text && socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({type: 'message', message: text, user_id: userId}));
+            messageInput.value = '';
+        }
+    }
+
+    // Обработка Enter
+    messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    window.onload = () => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        connectWebSocket();
+    };
+</script>
+{% endblock %}

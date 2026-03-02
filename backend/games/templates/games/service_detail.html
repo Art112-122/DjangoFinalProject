@@ -84,9 +84,9 @@
         <div class="card border-0 shadow-sm rounded-4 mb-4 text-center p-4">
           <h2 class="fw-bold text-dark mb-4">{{ service.price }} $</h2>
           
-          <button class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm mb-3 py-3 fw-bold">
+          <a href="{% url 'chat:start_chat' service.author.id %}" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm mb-3 py-3 fw-bold">
             Написать продавцу
-          </button>
+          </a>
 
           <div class="d-grid gap-2">
             <button class="btn btn-light rounded-pill py-2" 

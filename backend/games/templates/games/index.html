@@ -69,8 +69,20 @@
 
                 <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between">
                   <div class="d-flex align-items-center" style="z-index: 2; position: relative;">
-                    <img src="{{ service.author.avatar.url }}" class="rounded-circle me-2" width="24" height="24" />
-                    <span class="small text-muted">{{ service.author.username }}</span>
+                    <a href="{% url 'seller_profile' service.author.email %}" class="text-decoration-none d-flex align-items-center">
+                      <img src="{{ service.author.avatar.url }}" class="rounded-circle me-2" width="24" height="24" style="object-fit: cover;" />
+                      <span class="small text-muted hover-primary">{{ service.author.username }}</span>
+                    </a>
+                  </div>
+
+                  <div class="text-warning small" style="white-space: nowrap; z-index: 2; position: relative;">
+                    {% with avg=service.get_average_rating %}
+                      {% if avg > 0 %}
+                        ★ <span class="text-dark fw-bold">{{ avg|stringformat:'.1f' }}</span>
+                      {% else %}
+                        <span class="text-muted" style="opacity: 0.5;">☆ 0.0</span>
+                      {% endif %}
+                    {% endwith %}
                   </div>
                 </div>
               </div>
