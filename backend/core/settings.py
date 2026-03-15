@@ -7,17 +7,17 @@ import dj_database_url
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv()
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False") == "True"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+
 
 
 # Application definition
@@ -82,6 +82,7 @@ if DATABASE_URL and AUTH_URL:
         "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600),
         "auth_db": dj_database_url.parse(AUTH_URL, conn_max_age=600)
     }
+
 else:
     raise ValueError("DATABASE_URL не найден в .env")
 
@@ -130,6 +131,8 @@ LOGIN_REDIRECT_URL = '/'
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -144,11 +147,13 @@ USE_TZ = True
 
 AUTH_USER_MODEL = "authentication.User"
 
-# Session settings
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7
-SESSION_COOKIE_SECURE = not DEBUG
+#Настройки сесии
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 дней
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+
+# Включаем secure cookies только если DEBUG=False
+SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
 # -----------------------------------------

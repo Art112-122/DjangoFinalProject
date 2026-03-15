@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from chat.models import ChatRoom
+from .models import ChatRoom
 import logging
 
 logger = logging.getLogger(__name__)

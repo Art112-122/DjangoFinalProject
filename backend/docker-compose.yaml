@@ -1,0 +1,50 @@
+
+services:
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django-backend
+    image: django-backend
+
+    user: django-user
+    restart: always
+
+    ports:
+      - 8000:8000
+
+    volumes:
+      - .:/backend
+
+    env_file:
+      - .env
+
+    command: >
+      sh -c "
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --workers 3
+      "
+
+    networks:
+      - backend
+
+
+  adminer:
+    image: adminer
+    container_name: adminer-postgres
+    restart: always
+
+    ports:
+      - 8080:8080
+
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1452

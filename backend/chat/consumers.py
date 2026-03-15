@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from chat.models import ChatRoom, Message
+from .models import ChatRoom, Message
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -14,6 +14,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name = f"chat_{self.room_id}"
 
             self.user = self.scope.get("user")
+            print(self.user)
             if not self.user or not self.user.is_authenticated:
                 await self.close()
                 return
